@@ -10,16 +10,20 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-#def country_column(row, country):
-#    """Function that returns row only if the location is equal to \
-#        one country"""
-#    if row["Location"] == country:
-#        return row
-
-
 def one_country(data, country):
     """Function that returns dataset containing data of only one country"""
-    return data.loc[data["Location"] == country]
+    one_country = []
+    one_country = data.loc[data["Location"] == country]
+    one_country = one_country[["Period", "FactValueNumeric"]]
+    return one_country
+
+
+def period_2019(data):
+    """dd"""
+    period_2019 = []
+    period_2019 = data.loc[data["Period"] == 2019]
+    period_2019 = period_2019[["Location", "FactValueNumeric"]]
+    return period_2019
 
 
 life_expect = pd.read_csv("life_expectancy.csv")
@@ -27,48 +31,34 @@ life_expect = pd.read_csv("life_expectancy.csv")
 life_expect_birth = life_expect.loc[life_expect["Indicator"] == \
                                     "Life expectancy at birth (years)"]
 
-#life_expect.drop(["IndicatorCode"], axis=1, inplace=True) DELETE
-
 # Only keep the relevant columns for the line plot:
-life_expect_line = life_expect_birth[["Location", "Period", \
+life_expect_birth = life_expect_birth[["Location", "Period", \
                                       "FactValueNumeric"]]
 
 # See all countries in dataset:
-for Location in life_expect_line:
-    print(life_expect_line[Location].unique())
+for Location in life_expect_birth:
+    print(life_expect_birth[Location].unique())
 
-# Make dataframes per country:
-expect_chi = one_country(life_expect_line, "China")
-expect_chi = expect_chi.groupby(["Period", "Location"], as_index=False)\
+# Make dataframes per country and sort by period:
+expect_chi = one_country(life_expect_birth, "China")
+expect_chi = expect_chi.groupby("Period", as_index=False)\
     ["FactValueNumeric"].mean()
 
-expect_rus = one_country(life_expect_line, "Russian Federation")
-expect_rus = expect_rus.groupby(["Period", "Location"], as_index=False)\
+expect_rus = one_country(life_expect_birth, "Russian Federation")
+expect_rus = expect_rus.groupby("Period", as_index=False)\
     ["FactValueNumeric"].mean()
 
-expect_can = one_country(life_expect_line, "Canada")
-expect_can = expect_can.groupby(["Period", "Location"], as_index=False)\
+expect_can = one_country(life_expect_birth, "Canada")
+expect_can = expect_can.groupby("Period", as_index=False)\
     ["FactValueNumeric"].mean()
-print(expect_can)
 
-expect_us = one_country(life_expect_line, "United States of America")
-expect_us = expect_us.groupby(["Period", "Location"], as_index=False)\
+expect_us = one_country(life_expect_birth, "United States of America")
+expect_us = expect_us.groupby("Period", as_index=False)\
     ["FactValueNumeric"].mean()
-print(expect_us)
 
-#expect_leso = []
-#expect_leso = life_expect_line.apply(country_column, country="Lesotho", axis=1)
-# Only keep the rows without NaNs:
-#expect_leso = expect_leso[expect_leso["FactValueNumeric"].notna()]
-#expect_leso = expect_leso.groupby("Period", as_index=False)\
-#    ["FactValueNumeric"].mean()
-
-#life_expect3 = life_expect2.groupby(["Location", "Period"]).mean()
-#print(life_expect3)
-
+# Line plot of life expectancy of biggest countries over time
 plt.figure()
 
-#plt.hist(expect_leso["FactValueNumeric"])
 plt.plot(expect_chi["Period"], expect_chi["FactValueNumeric"], label="China")
 plt.plot(expect_rus["Period"], expect_rus["FactValueNumeric"], label="Russia")
 plt.plot(expect_can["Period"], expect_can["FactValueNumeric"], label="Canada")
@@ -80,6 +70,52 @@ plt.ylabel("Life expectancy in years")
 plt.xlim(2000, 2019)
 plt.legend(loc="lower right")
 
-plt.savefig("life_expectancy.png")
+plt.savefig("life_expectancy_lineplot.png")
+
+plt.show()
+
+expect_2019 = period_2019(life_expect_birth)
+expect_2019 = expect_2019.groupby("Location", as_index=False)\
+    ["FactValueNumeric"].mean()
+
+expect_2019_bur = expect_2019.loc[expect_2019["Location"] == "Burundi"]
+expect_2019_som = expect_2019.loc[expect_2019["Location"] == "Somalia"]
+expect_2019_moz = expect_2019.loc[expect_2019["Location"] == "Mozambique"]
+expect_2019_mad = expect_2019.loc[expect_2019["Location"] == "Madagascar"]
+expect_2019_sie = expect_2019.loc[expect_2019["Location"] == "Sierra Leone"]
+
+expect_2019_poor = pd.concat([expect_2019_bur, expect_2019_som, \
+                              expect_2019_moz, expect_2019_mad, \
+                              expect_2019_sie], axis=0)
+
+expect_2019_den = expect_2019.loc[expect_2019["Location"] == "Denmark"]
+expect_2019_nor = expect_2019.loc[expect_2019["Location"] == "Norway"]
+expect_2019_lux = expect_2019.loc[expect_2019["Location"] == "Luxembourg"]
+expect_2019_ire = expect_2019.loc[expect_2019["Location"] == "Ireland"]
+expect_2019_swi = expect_2019.loc[expect_2019["Location"] == "Switzerland"]
+
+expect_2019_rich = pd.concat([expect_2019_den, expect_2019_nor, \
+                              expect_2019_lux, expect_2019_ire, \
+                              expect_2019_swi], axis=0)
+
+# Bar plot of life expectancy for the year 2019
+plt.figure()
+
+plt.figure(figsize=(14, 5))
+plt.suptitle("Life expectancy of countries in 2019")
+
+plt.subplot(1, 2, 1)
+plt.bar(expect_2019_poor["Location"], expect_2019_poor["FactValueNumeric"])
+plt.xlabel("Poorest countries")
+plt.ylabel("Life expectancy in years")
+plt.ylim(0, 85)
+
+plt.subplot(1, 2, 2)
+plt.bar(expect_2019_rich["Location"], expect_2019_rich["FactValueNumeric"])
+plt.xlabel("Richest countries")
+plt.ylabel("Life expectancy in years")
+plt.ylim(0, 85)
+
+plt.savefig("life_expectancy_barplot.png")
 
 plt.show()
